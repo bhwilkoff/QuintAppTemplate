@@ -24,8 +24,8 @@ the up-front cost of setting up AI-assisted development from scratch.
 
 ## Track record
 
-This template is the fifth generation of a working lineage — each
-predecessor shipped to production and its lessons were folded back in:
+This template is the fifth generation of a working lineage — each app
+shipped to production and its lessons were folded back in:
 
 - **BOBA Playbook** (iOS App Store + Play internal track + web) —
   origin of the parity matrix, binding design docs, and the
@@ -41,6 +41,18 @@ predecessor shipped to production and its lessons were folded back in:
   `play-cli-submission`), and the latest Android native gotchas**
   (image User-Agent throttling, Media3 fullscreen/PiP, edge-to-edge
   insets) — now vendored here as skills.
+- **Tidbits Trivia** (iOS + tvOS on TestFlight, Android on the Play
+  internal track, web on a custom domain) — built on the 4th generation,
+  it contributed the **cross-platform multiplayer** methodology (the
+  transport-seam abstraction, serverless same-room play over
+  mDNS+TCP+AES-GCM, GameKit + Firebase-RTDB online, believable-bot
+  fallback — `cross-platform-multiplayer`), **cross-platform determinism**
+  (order-independent hash-rank + golden-parity testing —
+  `cross-platform-determinism`), the **build-time content-corpus
+  derivation** method (`content-corpus-derivation`), the **cloud-build
+  cert-cap autofix** (`cloud-appstore-submission` Rule 8), and the
+  **bot-labeling honesty rule** (`learning-orientation-design`) — all now
+  vendored here as skills + Decisions 023–027.
 
 ## What's in the template
 
@@ -275,8 +287,9 @@ npx openskills install drjacky/claude-android-ninja
 
 ## What this template encodes
 
-**From five platforms' worth of production iteration** (three shipped
-app lineages, both app stores, plus a native Mac app):
+**From five platforms' worth of production iteration** (four shipped
+apps, both app stores, a native Mac app, plus cross-platform + online
+multiplayer):
 
 - **Cross-platform**: parity tracking via a 5-platform PARITY.md with
   audit protocol, design-token alignment across CSS / Swift / Kotlin,
