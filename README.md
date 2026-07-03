@@ -248,7 +248,7 @@ repository to track.
 | `claude-plugins-official` | `frontend-design` skill | refresh from upstream |
 | [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) | `app-store-screenshots` | refresh from upstream |
 | [BigSiggis/Killer-UI](https://github.com/BigSiggis/Killer-UI) | `killer-ui` skill + `KUI:*` slash commands | refresh from upstream |
-| Template maintainer | cross-platform methodology + design + production skills (incl. macOS + cloud-submission) | hand-edited |
+| Template maintainer | cross-platform methodology + design + production skills (incl. macOS, cloud/Play submission, cross-platform multiplayer, cross-platform determinism, content-corpus derivation) | hand-edited |
 
 **Refreshing marketplace + GitHub-tracked skills**: run
 `tools/refresh-skills.sh`. Safe to re-run; reports diffs.

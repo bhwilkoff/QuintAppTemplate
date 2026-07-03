@@ -55,10 +55,34 @@ Code that builds on the beta Xcode can FAIL on the runner's GA Xcode:
 
 Increment **`MARKETING_VERSION` (patch)** AND **`CURRENT_PROJECT_VERSION`** in the shared version config on every submitted build. **Why**: App Review **burns a build number even on a rejection** — reusing it means the next upload collides and is refused. One version config is the single source of truth (never bump through Xcode's identity panel — it creates per-target overrides).
 
+## Rule 8 — Self-revoke stale auto-created Development certs, or the cert cap blocks you
+
+**Symptom:** after a run of clean cloud builds, ARCHIVE fails with *"Your account
+has reached the maximum number of certificates. To create a new one, you must
+choose a certificate to revoke"* + "No profiles found." The app archives fine
+locally — this is NOT a code problem.
+
+**Cause:** `xcodebuild archive -allowProvisioningUpdates` on a *fresh* runner with
+an empty keychain auto-creates a new **Development** signing cert every build. They
+pile up (all named "Created via API", type Development) until Apple's per-account
+cert cap is hit. Named personal certs and Distribution certs are never the problem.
+
+**Fix (permanent, self-limiting):** run a cleanup step BEFORE the archive that
+revokes stale API-created Development certs, keeping the newest 1–2 for headroom.
+`asc_certs.py` gains a `cleanup [--keep N] [--dry-run]` command that lists
+`/v1/certificates`, filters to `certificateType` containing `DEVELOPMENT` AND
+`displayName == "Created via API"` (sparing named + all Distribution certs), and
+`DELETE`s the surplus via the same ASC-API JWT the build already has. Wire it into
+the workflow (`python tools/asc_certs.py cleanup --keep 2 || true`) so it never
+fails the build and the cap can never block a build again. Do NOT hand-delete in
+the portal — it's fully programmatic. (The issuer ID is a GitHub secret, unreadable
+locally; the CI step has it, so re-running the workflow is the manual escape hatch.)
+
 ## Scaffolding shipped
 
-- `.github/workflows/appstore-build.yml` — the CI entry point (`-f platform=…`)
-- `tools/asc_certs.py`, `tools/asc_profiles.py` — mint distribution certs + profiles via the ASC API
+- `.github/workflows/appstore-build.yml` — the CI entry point (`-f platform=…`), with the cert-cleanup step before archive
+- `tools/asc_certs.py` — mint distribution certs + `cleanup` stale dev certs via the ASC API
+- `tools/asc_profiles.py` — mint provisioning profiles via the ASC API
 - `tools/submit-appstore.sh` — local driver that dispatches the workflow / polls status
 - `docs/CLOUD-SUBMISSION.md` — the full runbook (secret setup, runner-label bumps, troubleshooting)
 

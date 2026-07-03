@@ -563,3 +563,122 @@ or controls-visibility hook. On macOS specifically, do NOT wrap the
 asset in an `AVMutableComposition` to inject a title — over a
 resilient custom-scheme asset it renders blank video. Fix embedded
 metadata at the source, never at the player layer.
+
+## 023 — Cross-platform multiplayer rides a transport seam; the protocol + arbiter live in Core
+
+*Date: 2026-07-03*
+
+Real-time multiplayer that spans native + web puts the wire types and the
+authoritative logic (who wins, whose turn, when to advance) in the shared `Core/`
+layer with **no platform-networking import**. Every transport — Bonjour+TCP,
+Wi-Fi Aware, GameKit, a backend WebSocket — conforms to one small seam
+(`PeerLink`: advertise/discover/connect/send-frame/on-frame). The host/client
+state machines are written once against the seam. Play is **host-paced,
+everyone-plays**: the host ships the shared plan once and each device runs its OWN
+deterministic engine over the identical list, self-reporting its score
+(friendly-game trust model). A peer match with no host elects the lowest stable id
+as leader.
+
+**Why**: Core with no networking import compiles for every target (incl. tvOS +
+the Kotlin/JS mirrors) AND is unit-testable offline — a whole match runs in a test
+with no radio or server. The seam is what makes "local same-room" and "online" the
+SAME feature with a different adapter, instead of two codebases. Self-reported
+scores keep the wire tiny and are correct for people in a room together.
+
+**How to apply**: build the local same-room path first (**mDNS discovery + plain
+TCP + app-layer AES-256-GCM keyed by `SHA256("<ns>:"+ROOMCODE)`** — the only
+cross-platform LAN path; TLS-PSK fails because Android's Conscrypt can't do
+GCM-PSK, and a wrong code → GCM tag fails → frame dropped = the pairing gate). Ship
+IDs not payloads when both clients bundle the same corpus (~100× smaller frames, with
+a full-object fallback). Pin the wire with a canonical schema + a golden test that
+encodes on one stack and decodes on the other, both directions, plus an id-parity
+check. See `cross-platform-multiplayer`.
+
+## 024 — Online play is per-ecosystem native + a neutral backend; bot-first with honest labels
+
+*Date: 2026-07-03*
+
+Online (across-the-internet) play rides each ecosystem's native path where one
+exists and a neutral backend where none does — behind the SAME `PeerLink` seam as
+local play (Decision 023). **Apple = GameKit** (free matchmaking + transport).
+**Android + web = a neutral backend** because **Google killed Play Games real-time
+multiplayer in 2020** — the cheapest that works is **Firebase Realtime Database**
+(anonymous-auth-gated ephemeral rooms, a transaction-claimed matchmaking queue,
+Security-Rules-only, hard-stop free tier). Launch matchmaking is empty, so ship a
+**believable CPU opponent** first (clamped correct-rate that varies by
+category/difficulty, log-normal timing, ~5% freeze).
+
+**Why**: there is no native Android real-time transport, so cross-platform online
+REQUIRES a backend for the non-Apple clients; forcing Apple through the same
+backend would waste GameKit's free matchmaking. A labeled bot makes multiplayer
+feel alive from day one with zero connectivity.
+
+**How to apply**: reuse the local coordinator verbatim online (leader = lowest
+stable id runs the host role). **NON-NEGOTIABLE: a bot is ALWAYS visibly labeled
+CPU, never presented as a human** (a disguised bot is a dark pattern —
+`learning-orientation-design`). The friendly-game trust model does NOT hold between
+strangers: if you matchmake strangers, add a server-authoritative spine (server owns
+the clock; split public prompt from private answer key; reject late answers). RTDB
+security rules only ever BROADEN — a blanket parent `.write` overrides a per-uid
+child rule; gate each child. See `cross-platform-multiplayer`.
+
+## 025 — Cross-platform-identical values use order-independent hash-rank + golden-parity tests
+
+*Date: 2026-07-03*
+
+Any value that must be identical on every platform — a "daily" content pick, a
+shared shuffle, a match plan, a hash key — is produced by an **order-independent
+hash-rank** (hash a canonical string per candidate with FNV-1a64, take the N
+smallest), NEVER a seeded shuffle. One algorithm, N language mirrors, changed in
+lockstep, proven by a golden test that runs the REAL code on every stack and diffs.
+
+**Why**: a seeded shuffle diverges across languages (different PRNGs, different sort
+stability). Hash-rank is order-independent and trivially identical *if* the hash is
+identical — and a golden test is the only thing that proves the mirrors haven't
+drifted.
+
+**How to apply**: mirror the ~15-line selection in each stack + a Python copy if the
+build needs one; treat a drifted mirror as a P0 bug. Watch the gotchas: Kotlin
+signed-`Byte` sign-extends non-ASCII bytes (mask `and 0xFF`); JS needs BigInt for a
+full 64-bit hash; compute `dateKey` in ONE agreed timezone; hash UTF-8 bytes not
+UTF-16. See `cross-platform-determinism`.
+
+## 026 — Persist per-event detail, not just aggregates
+
+*Date: 2026-07-03*
+
+Records/history persist per-EVENT detail (e.g. each answer: id, prompt, outcome,
+correct value), not only the aggregate (score, count). Add the detail as an
+OPTIONAL field so the store migrates automatically and old detail-less records
+degrade gracefully.
+
+**Why**: aggregate-only records are a dead end — you can't later add a history
+drill-in, a per-item review, or attempt comparison without the detail on disk, and
+by then the old records will never have it. Storing it from the start is nearly free
+and unlocks a whole class of later features.
+
+**How to apply**: keep the detail spoiler-safe (it's the user's own history) so it
+can persist in the clear. Keep ALL N platform stores (SwiftData / Room-or-prefs /
+localStorage) in lockstep — adding a field means all N writers + readers in one
+change set. Old records with no detail show totals only — never crash, never
+fabricate.
+
+## 027 — Cloud Apple builds self-revoke stale auto-created Development certs
+
+*Date: 2026-07-03*
+
+The cloud App Store workflow revokes stale API-created Development certs (keeping
+the newest 1–2) in a step BEFORE the archive.
+
+**Why**: `xcodebuild archive -allowProvisioningUpdates` on a fresh runner
+auto-creates a new Development signing cert every build; they accumulate until
+Apple's per-account cert cap blocks the archive ("maximum number of certificates").
+The app compiles fine — it's a pure account-state failure that recurs every few days
+of builds without a cleanup.
+
+**How to apply**: `asc_certs.py cleanup [--keep N]` lists `/v1/certificates`, filters
+to `DEVELOPMENT`-type certs named "Created via API" (sparing named + all Distribution
+certs), and DELETEs the surplus via the ASC-API JWT the build already has. Wire it as
+`python tools/asc_certs.py cleanup --keep 2 || true` before the archive so it never
+fails the build and the cap can never block one again. Never hand-delete in the
+portal. See `cloud-appstore-submission`.

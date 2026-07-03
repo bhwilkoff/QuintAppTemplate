@@ -16,6 +16,25 @@ Apple platforms (iOS · macOS · tvOS) are adjacent in every table because
 they share one Swift Core — a Core change usually moves all three columns
 at once, so verify each still builds.
 
+> **Last audit: YYYY-MM-DD** — <what was walked + which false cells it
+> caught, e.g. "walked every shipped feature; found 3 cells claiming ✅
+> that were actually stubs">. Run the periodic audit from the
+> `cross-platform-parity-discipline` skill and record the date + findings
+> here every time — day-to-day updates miss silently-false cells; only a
+> deliberate sweep catches them.
+
+---
+
+## 0. Platform set
+
+<!-- Pin the platform decision here so it's not re-litigated. Which of
+     web / iOS / iPadOS / macOS / tvOS / Android ship, and WHY each earns
+     its place (or is 🚫 out of scope), with DECISIONS.md refs. Name the
+     LEAD platform (ships first, others mirror). tvOS earns its place when
+     content is lean-back; macOS is nearly free once the universal Apple
+     target exists; skip a platform whose idiom fights the app. A platform
+     not yet reached is ⏳ with a note, never silence. -->
+
 ---
 
 ## Legend

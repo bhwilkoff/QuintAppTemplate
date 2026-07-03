@@ -112,6 +112,10 @@ A trading-card app that calls weapons "categories" because "weapons" is jargon i
 
 When the tool guesses what the user wants and silently does it, two failure modes appear: (a) the user doesn't notice the inference and trusts the result wrongly, (b) the user notices the inference is wrong and loses trust. Either way, the user is worse off than if the tool had been explicit.
 
+### ❌ Passing off automation as a human
+
+If a feature substitutes a bot/AI for a missing person — a CPU opponent while matchmaking is empty, an auto-reply, a synthetic "other user" — it must be **visibly labeled** as such. A labeled bot is an honest, graceful bootstrap; a bot disguised as a human is a dark pattern that manufactures a false social relationship. The test: *would the user feel deceived if they learned the truth?* If yes, label it. (This is a hard rule, not a preference — it applies to every synthetic stand-in for a human, no exceptions.)
+
 ## Sequencing — when to apply this skill
 
 This skill is most valuable BEFORE implementation. Once a feature ships, redesigning around these values is expensive.

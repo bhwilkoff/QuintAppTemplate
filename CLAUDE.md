@@ -31,6 +31,9 @@ these patterns; invoke the skill when its trigger matches.
 | Shipping a feature on ANY platform | `cross-platform-parity-discipline` |
 | Planning a new platform, or sequencing the buildout | `multiplatform-expansion-method` |
 | Designing/changing shared backend data the clients consume | `shared-data-plane-contract` |
+| Deriving a shipped corpus from a messy source (facts, cards, entries) | `content-corpus-derivation` |
+| Real-time multiplayer across native + web (local same-room or online) | `cross-platform-multiplayer` |
+| A value that must be identical on every platform (daily pick, shuffle, hash) | `cross-platform-determinism` |
 | Video/audio streaming from hosts you don't control | `resilient-media-streaming` |
 | Sync, sign-in, favorites/progress across devices | `per-ecosystem-sync-islands` |
 | Preparing any store submission (App Store, Mac App Store, Play, tvOS) | `store-submission-playbook` |
@@ -454,6 +457,13 @@ decoration. Test at 375px before 1440px. On tvOS the analogue is
 cards should be quiet, and brightness is reserved for the focused
 element.
 
+**Icons vs. emoji (R-ICON-1)**: UI icons come from the platform icon
+system — SF Symbols on Apple, Material Symbols on Android, inline SVG on
+web. Emoji are **content** (a share grid, celebration copy, a data
+string), never chrome. An emoji used as a button/nav icon renders
+inconsistently across platforms and OS versions and reads as unpolished;
+reach for the icon system every time.
+
 ---
 
 ## When to create a binding design doc
@@ -504,6 +514,21 @@ re-derives flags, or re-hosts the data. Author
 client exists. The `shared-data-plane-contract` skill carries the
 full pattern (publishing, CORS/Range realities for the browser,
 ETag refresh, additive evolution, merge-guarded mutations).
+
+**Cross-platform determinism.** Any value that must come out identical
+on every platform — a "daily" pick, a shared shuffle, a match plan, a
+hash key — is produced by ONE algorithm mirrored in each language and
+proven by a **golden test that runs the real code on every stack and
+diffs**. Never a seeded shuffle (RNGs differ across languages); prefer
+an order-independent hash-rank. Watch the Kotlin signed-`Byte` hash
+gotcha (`and 0xFF`). See `cross-platform-determinism`.
+
+**Networked multiplayer rides a transport seam.** The wire protocol +
+the authoritative arbiter live in `Core/` with NO platform-networking
+import, so they compile for every target and unit-test offline; each
+transport (Bonjour+TCP, GameKit, a backend WebSocket) is a thin adapter
+below one `PeerLink` interface. Local same-room and online are the same
+feature with a different adapter. See `cross-platform-multiplayer`.
 
 ---
 

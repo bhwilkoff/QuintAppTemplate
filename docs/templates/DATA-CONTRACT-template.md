@@ -51,7 +51,18 @@ Notes to keep verified (re-measure with GET, not HEAD):
 <!-- Tables/columns (or JSON shape) with types. Mark policy flag
      columns (visibility/maturity/rights) and which are COMPUTED at
      build time. Note FTS tables. Schema evolution is ADDITIVE ONLY:
-     new columns/keys; clients ignore unknowns; bump schemaVersion. -->
+     new columns/keys; clients ignore unknowns; bump schemaVersion.
+     Evolution rules that bite in production:
+       - Column/field ORDER is load-bearing if any client positionally
+         parses (CSV, packed rows) — append only, never reorder.
+       - Each client VERSIONS + KEYS its local cache on schemaVersion, so
+         a schema bump invalidates stale caches instead of mis-parsing.
+       - A field that breaks the shared shape (a new item type) earns its
+         own ADDITIVE, separately-bundled file — the main artifact contract
+         stays unchanged (see shared-data-plane-contract).
+       - Any value selected deterministically across clients (a "daily"
+         pick, a shuffle) is a CROSS-CLIENT CONTRACT, not an implementation
+         detail: spec the algorithm here (see cross-platform-determinism). -->
 
 ---
 
